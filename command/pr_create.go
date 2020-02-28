@@ -14,6 +14,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type defaults struct {
+	Title string
+	Body  string
+}
+
+func computeDefaults(baseRepo ghrepo.Interface, baseBranch string, headBranchLabel string) (defaults, error) {
+	/*
+		• we fetch information about the base repo, such as the base branch name. you could request an additional field that's the commit SHA of the base branch, which you can then use locally to generate a git log between <base>..HEAD
+		• if there is only 1 commit, we can pre-populate
+		• we should generally strip some lines away when reading from commit body, such as Co-authored-by and Signed-off-by
+	*/
+
+	// TODO i'm not sure that we're pulling branch info; we are using a string to refer to it.
+	// investigate how to get the ref for the base branch and where we're already doing a query that
+	// could include it (i'm hoping it's the Repository struct query but I'm not sure)
+
+	return defaults{}, nil
+}
+
 func prCreate(cmd *cobra.Command, _ []string) error {
 	ctx := contextForCommand(cmd)
 	remotes, err := ctx.Remotes()
@@ -123,6 +142,21 @@ func prCreate(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("could not parse body: %w", err)
 	}
 
+	interactive := title == "" || body == ""
+
+	if title == "" || body == "" {
+		defaults, err := computeDefaults(baseRepo, baseBranch, headBranchLabel)
+		if err != nil {
+			return fmt.Errorf("could not compute title or body defaults:  %w", err)
+		}
+		if title == "" {
+			title = defaults.Title
+		}
+		if body == "" {
+			body = defaults.Body
+		}
+	}
+
 	isWeb, err := cmd.Flags().GetBool("web")
 	if err != nil {
 		return fmt.Errorf("could not parse web: %q", err)
@@ -139,8 +173,6 @@ func prCreate(cmd *cobra.Command, _ []string) error {
 		ghrepo.FullName(baseRepo))
 
 	action := SubmitAction
-
-	interactive := title == "" || body == ""
 
 	if interactive {
 		var templateFiles []string
