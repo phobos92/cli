@@ -1,0 +1,95 @@
+Generate Key Pair
+
+C:\certs>keytool -genkey -alias mykey -keyalg RSA -keysize 1024 -dname “CN=local
+host, OU=Customer Support, O=BEA Systems Inc, L=Denver, ST=Colorado, C=US” -keyp
+ass password -keystore identity.jks -storepass password
+
+Self Sign the certificates
+
+C:\certs>keytool -selfcert -v -alias mykey -keypass password -keystore identity.
+jks -storepass password -storetype jks
+New certificate (self-signed):
+[
+[
+Version: V3
+Subject: CN=localhost, OU=Customer Support, O=BEA Systems Inc, L=Denver, ST=Co
+lorado, C=US
+Signature Algorithm: SHA1withRSA, OID = 1.2.840.113549.1.1.5
+
+Key: Sun RSA public key, 1024 bits
+modulus: 108342965006068643588893180491570939949736584519654598627176377967838
+26940447697831537132527381459459266829807329604009020938875414181382044292466705
+89819838780374644650699373537069348379731906983832802029884351785733351834411699
+83101988490742211602827902735858231021288915845653840773351114087084563504850163
+
+public exponent: 65537
+Validity: [From: Tue Sep 10 20:15:56 IST 2013,
+To: Mon Dec 09 20:15:56 IST 2013]
+Issuer: CN=localhost, OU=Customer Support, O=BEA Systems Inc, L=Denver, ST=Col
+orado, C=US
+SerialNumber: [ 522f30a4]
+
+]
+Algorithm: [SHA1withRSA]
+Signature:
+0000: 2F 39 D1 80 63 BC FD 49 D0 EC CC 1B B7 D4 B0 01 /9..c..I……..
+0010: C4 CE 50 F3 B1 3D 3D 37 F2 3F 08 B5 12 D9 45 D5 ..P..==7.?….E.
+0020: FC FA FA AB 07 28 DD 97 86 CE A2 CA C3 8D 78 95 …..(……..x.
+0030: 6C 34 37 D5 DE BE 53 8E 33 7F 11 85 3F D2 0C A0 l47…S.3…?…
+0040: 17 8D 38 E0 FB BD 5E 73 8F CE 2A 5B F2 6E 69 6B ..8…^s..*[.nik
+0050: 09 9D 76 AD 55 5F D6 DD 07 97 59 95 A7 D8 7C B5 ..v.U_….Y…..
+0060: A1 A2 E8 D2 B5 14 30 45 7B 36 9E 55 E8 7E 2C 48 ……0E.6.U..,H
+0070: D6 F2 69 B3 C7 03 B9 8D 3A 22 E1 49 3E 09 B4 21 ..i…..:”.I>..!
+
+]
+[Storing identity.jks]
+
+Export your public key
+
+C:\certs>keytool -export -v -alias mykey -file rootCA.der -keystore identity.jks
+-storepass password
+Certificate stored in file
+
+Create a trust store.
+
+C:\certs>keytool -import -v -trustcacerts -alias mykey -file rootCA.der -keystor
+e trust.jks -storepass password
+Owner: CN=localhost, OU=Customer Support, O=BEA Systems Inc, L=Denver, ST=Colora
+do, C=US
+Issuer: CN=localhost, OU=Customer Support, O=BEA Systems Inc, L=Denver, ST=Color
+ado, C=US
+Serial number: 522f30a4
+Valid from: Tue Sep 10 20:15:56 IST 2013 until: Mon Dec 09 20:15:56 IST 2013
+Certificate fingerprints:
+MD5: 59:49:CD:AD:13:B0:98:A2:16:88:6B:3B:13:1A:C8:58
+SHA1: A8:B5:7A:B8:A1:19:40:EB:8F:18:6D:33:EE:8C:1B:62:6E:94:BF:05
+Signature algorithm name: SHA1withRSA
+Version: 3
+Trust this certificate? [no]: yes
+Certificate was added to keystore
+[Storing trust.jks]
+
+Execute the WLST Script
+
+C:\certs>java weblogic.WLST setupSSL.py
+
+connect('weblogic','weblogic123','t3://localhost:7001')
+edit()
+startEdit()
+cd('/Servers/AdminServer')
+cmo.setCustomIdentityKeyStoreFileName("C:\\certs\\identity.jks")
+set('CustomIdentityKeyStorePassPhrase', 'password')
+cmo.setCustomTrustKeyStoreFileName("C:\\certs\\trust.jks")
+set('CustomTrustKeyStorePassPhrase', 'password')
+cmo.setKeyStores('CustomIdentityAndCustomTrust')
+cmo.setCustomIdentityKeyStoreType('JKS')
+cmo.setCustomTrustKeyStoreType('JKS')
+cd('/Servers/AdminServer/SSL/AdminServer')
+cmo.setServerPrivateKeyAlias('mykey')
+set('ServerPrivateKeyPassPhrase', 'password')
+cd('/Servers/AdminServer/SSL/AdminServer')
+cmo.setEnabled(true)
+cmo.setListenPort(7002)
+save()
+activate()
+exit()
